@@ -5,13 +5,20 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Blog, getBlogsByCategory } from "@/firebase/blogModel/blogModel.ts";
 import Link from "next/link";
+import { getAllCategoriesRealTime } from "@/firebase/categoryModel/categoryModel.ts";
+
+// Category interface
+export interface Category {
+  id: string;
+  name: string;
+  photo?: string;
+}
 
 export default function BlogByCategory({ params }: { params: { id: string } }) {
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const router = useRouter();
   const categoryId = params.id;
-
-  console.log("Category ID:", categoryId);
+  const [categories, setCategories] = useState<Category[]>([]);
 
   useEffect(() => {
     if (!categoryId) {
@@ -28,6 +35,35 @@ export default function BlogByCategory({ params }: { params: { id: string } }) {
     fetchBlogs();
   }, [categoryId, router]);
 
+  // Fetch categories real-time
+  useEffect(() => {
+    // Fetch categories
+    const unsubscribeCategories = getAllCategoriesRealTime(
+      "categories",
+      (fetchedCategories: unknown) => {
+        if (Array.isArray(fetchedCategories)) {
+          setCategories(fetchedCategories as Category[]);
+        } else {
+          console.error("Invalid category data format:", fetchedCategories);
+        }
+      }
+    );
+
+    return () => {
+      unsubscribeCategories();
+    };
+  }, []);
+
+  // Get category name by ID
+  const getCategoryDetails = (categoryId: string | undefined) => {
+    const category = categories.find((cat) => cat.id === categoryId);
+    return category
+      ? { name: category.name, photo: category.photo }
+      : { name: "Unknown Category", photo: "" };
+  };
+
+  const categoryDetails = getCategoryDetails(categoryId);
+
   const blogsToDisplay = blogs.slice(0, 8); // Limit to 8 blogs
 
   // Clean and truncate content
@@ -43,6 +79,30 @@ export default function BlogByCategory({ params }: { params: { id: string } }) {
 
   return (
     <section className="px-6 py-10">
+      {/* Category Header */}
+      <div className="inline-block">
+        <div className="mb-6 flex gap-1 items-center bg-[#DBEAFE] hover:bg-[#bed0e7] transition-all duration-300 px-2 py-1 rounded-lg">
+          <h1 className="text-lg font-bold uppercase mb-0 text-gray-500">
+            Categories /
+          </h1>
+
+          <div className="flex items-center gap-2">
+            {categoryDetails.photo && (
+              <Image
+                src={categoryDetails.photo}
+                alt={`${categoryDetails.name} Icon`}
+                width={25}
+                height={25}
+                className="rounded-full object-cover"
+              />
+            )}
+            <h1 className="text-lg font-bold uppercase text-gray-500">
+              {categoryDetails.name}
+            </h1>
+          </div>
+        </div>
+      </div>
+
       <h1 className="text-3xl font-bold mb-6 uppercase">Blogs by Category</h1>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
         {blogsToDisplay.map((blogDisplay) => {

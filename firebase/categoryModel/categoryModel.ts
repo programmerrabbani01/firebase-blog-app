@@ -146,35 +146,57 @@ export const updateACategory = async (
 //   return category.data() as Category; // Cast to category type
 // };
 
-export const getASingleCategory = async (
-  id: string
-): Promise<Category | null> => {
-  if (!id) {
-    throw new Error("Category ID is required and cannot be undefined.");
-  }
+// export const getASingleCategory = async (
+//   id: string
+// ): Promise<Category | null> => {
+//   if (!id) {
+//     throw new Error("Category ID is required and cannot be undefined.");
+//   }
 
+//   try {
+//     const docRef = doc(database, "categories", id); // Reference the category document
+//     const docSnap = await getDoc(docRef); // Fetch the document
+
+//     if (docSnap.exists()) {
+//       const data = docSnap.data();
+//       return {
+//         id: docSnap.id,
+//         name: data.name || "",
+//         slug: data.slug || "",
+//         photo: data.photo || null,
+//         createdAt: data.createdAt || null,
+//         updatedAt: data.updatedAt || null,
+//         status: data.status || false,
+//         trash: data.trash || false,
+//       } as Category;
+//     } else {
+//       console.error("No such category exists in Firestore.");
+//       return null;
+//     }
+//   } catch (error) {
+//     console.error("Error fetching category:", error);
+//     throw new Error("Failed to fetch the category data.");
+//   }
+// };
+
+export const getASingleCategory = async (
+  categoryId: string
+): Promise<Category | null> => {
   try {
-    const docRef = doc(database, "categories", id); // Reference the category document
-    const docSnap = await getDoc(docRef); // Fetch the document
+    const docRef = doc(database, "categories", categoryId); // Ensure this matches your Firestore collection name
+    const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
-      const data = docSnap.data();
       return {
         id: docSnap.id,
-        name: data.name || "",
-        slug: data.slug || "",
-        photo: data.photo || null,
-        createdAt: data.createdAt || null,
-        updatedAt: data.updatedAt || null,
-        status: data.status || false,
-        trash: data.trash || false,
-      } as Category;
+        ...(docSnap.data() as Category), // Ensure this matches your Category type/interface
+      };
     } else {
-      console.error("No such category exists in Firestore.");
+      console.warn(`No category found with the ID: "${categoryId}"`);
       return null;
     }
   } catch (error) {
     console.error("Error fetching category:", error);
-    throw new Error("Failed to fetch the category data.");
+    return null;
   }
 };
